@@ -1,0 +1,159 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ======== 深色主题（默认）— 与 BI 系统一致 ======== */
+.dark body, body {
+  background: radial-gradient(
+      circle at top right,
+      rgba(59, 130, 246, 0.15),
+      transparent 40%
+    ),
+    radial-gradient(
+      circle at bottom left,
+      rgba(99, 102, 241, 0.15),
+      transparent 45%
+    ),
+    linear-gradient(180deg, #020617, #0f172a);
+  background-attachment: fixed;
+  color: #f8fafc;
+  font-family: 'Inter', 'Noto Sans SC', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ======== 浅色主题 ======== */
+html.light body {
+  background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+  background-attachment: fixed;
+  color: #1e293b;
+}
+
+/* ======== 深色滚动条 ======== */
+.dark ::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.dark ::-webkit-scrollbar-track {
+  background: #1e293b;
+  border-radius: 3px;
+}
+.dark ::-webkit-scrollbar-thumb {
+  background: #64748b;
+  border-radius: 3px;
+}
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* ======== 浅色滚动条 ======== */
+html.light ::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+html.light ::-webkit-scrollbar-track {
+  background: #e2e8f0;
+  border-radius: 3px;
+}
+html.light ::-webkit-scrollbar-thumb {
+  background: #94a3b8;
+  border-radius: 3px;
+}
+html.light ::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
+}
+
+/* ======== 深色仪表盘卡片 ======== */
+.dark .dashboard-card {
+  background: rgba(30, 41, 59, 0.6);
+  border: 1px solid rgba(148, 163, 184, 0.1);
+  border-radius: 12px;
+  backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
+}
+.dark .dashboard-card:hover {
+  border-color: rgba(59, 130, 246, 0.3);
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.1);
+}
+
+/* ======== 浅色仪表盘卡片 ======== */
+html.light .dashboard-card {
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(203, 213, 225, 0.4);
+  border-radius: 12px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+}
+html.light .dashboard-card:hover {
+  border-color: rgba(59, 130, 246, 0.3);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1);
+}
+
+/* ======== 深色发光效果 ======== */
+.dark .glow-effect {
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+}
+
+/* ======== 数字动画 ======== */
+@keyframes countUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-count {
+  animation: countUp 0.5s ease-out;
+}
+
+/* ======== 滑入动画 ======== */
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(-20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+.animate-slide-in {
+  animation: slideIn 0.3s ease-out;
+}
+
+/* ======== 深色仪表盘表格 ======== */
+.dark .dashboard-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.dark .dashboard-table th,
+.dark .dashboard-table td {
+  padding: 12px 16px;
+  text-align: left;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+}
+.dark .dashboard-table th {
+  background: rgba(30, 41, 59, 0.5);
+  color: #94a3b8;
+  font-weight: 500;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.dark .dashboard-table tr:hover {
+  background: rgba(59, 130, 246, 0.05);
+}
+
+/* ======== 浅色仪表盘表格 ======== */
+html.light .dashboard-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+html.light .dashboard-table th,
+html.light .dashboard-table td {
+  padding: 12px 16px;
+  text-align: left;
+  border-bottom: 1px solid rgba(203, 213, 225, 0.3);
+}
+html.light .dashboard-table th {
+  background: rgba(241, 245, 249, 0.8);
+  color: #475569;
+  font-weight: 500;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+html.light .dashboard-table tr:hover {
+  background: rgba(59, 130, 246, 0.05);
+}
