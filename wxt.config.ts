@@ -1,6 +1,8 @@
 import { defineConfig } from 'wxt'
 import react from '@vitejs/plugin-react'
 
+const apiBaseUrl = process.env.VITE_API_BASE_URL || 'http://localhost:8000'
+
 export default defineConfig({
   vite: () => ({
     plugins: [react({ jsxRuntime: 'automatic' })],
@@ -10,7 +12,7 @@ export default defineConfig({
     version: '1.0.0',
     description: '国际贸易发货策略对比 — 对比关税运费，AI推荐最优发货路线',
     permissions: ['storage', 'alarms', 'notifications'],
-    host_permissions: ['http://localhost:8000/*'],
+    host_permissions: [`${apiBaseUrl}/*`],
     content_security_policy: {
       extension_pages: 'script-src \'self\'; object-src \'self\'',
     },

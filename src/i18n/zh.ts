@@ -2,8 +2,8 @@ const zh = {
   // 应用
   app: {
     name: '税率政策工具',
-    subtitle: '国际贸易发货策略对比',
-    description: '对比关税运费，AI推荐最优发货路线',
+    subtitle: '美国进口关税测算与原产地对比',
+    description: '对比关税运费，展示税种拆解和风险提示',
     loading: '加载中...',
     offline: '离线模式',
     offlineTip: '部分功能不可用，请检查网络',
@@ -47,7 +47,10 @@ const zh = {
     costBreakdown: '成本拆解',
     customsDuty: '关税',
     section301: 'Section 301',
+    section122: 'Section 122 临时附加税',
     adcvd: 'AD/CVD',
+    adCvdRisk: 'AD/CVD 风险提示',
+    adCvdRiskDetail: '该商品可能适用 AD/CVD，需人工确认，不计入确定总成本',
     mpf: 'MPF',
     hmf: 'HMF',
     shipping: '运费',
@@ -55,8 +58,14 @@ const zh = {
     ftaApplied: 'FTA优惠',
     deMinimis: '低值豁免',
     section232: 'Section 232',
-    reciprocalTariff: '对等关税',
-    deMinimisRevoked: '低值豁免已取消',
+    reciprocalTariff: 'IEEPA 历史关税',
+    reciprocalTariffNote: 'IEEPA 关税已于 2026-02-20 被 SCOTUS 推翻，不再生效',
+    section122Note: 'Section 122 临时附加税，有效期至 2026-07-24，实际终止日以官方公告为准',
+    deMinimisStatus: '低值豁免状态',
+    deMinimisGloballySuspended: '美国 de minimis 已于 2025-08-29 全球暂停',
+    deMinimisSuspendedCnHk: 'CN/HK de minimis 已于 2025-05-02 先行暂停',
+    deMinimisActive: 'De Minimis 豁免有效',
+    disclaimer: '以上结果基于当前数据和假设生成，不构成法律、税务或海关归类意见，实际成本请以海关核定为准',
   },
 
   // 数据概览
@@ -248,6 +257,18 @@ const zh = {
     link: '邀请链接',
     reward: '好友注册并签到 3 天，双方各获 50 积分',
     copied: '链接已复制',
+  },
+
+  // HS 编码字典
+  hs: {
+    search: '搜索 HS 编码或品名',
+    selectSubCode: '选择具体分类',
+    subCodeHint: '同一 HS 编码下可能有多个细分类，请根据产品特性选择',
+    noMatch: '未找到匹配的 HS 编码',
+    cachedAt: '数据缓存于 {{date}}',
+    fetchNew: '更新数据',
+    source: '数据来源：{{source}}',
+    dictLoading: '加载编码字典...',
   },
 
   // 认证（手机号登录 + 邮箱绑定）

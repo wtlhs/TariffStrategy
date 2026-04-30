@@ -64,7 +64,12 @@ export default defineBackground(() => {
 // ============================================================
 
 async function handleTariffCheck(): Promise<void> {
-  console.log('[税率政策工具] 执行税率变化检查...')
+  if (!import.meta.env.DEV) {
+    console.log('[税率政策工具] 税率变化检查跳过（等待后端 API 对接）')
+    return
+  }
+
+  console.log('[税率政策工具] 执行税率变化检查（开发模式模拟）...')
 
   const changes = detectSimulatedChanges()
 

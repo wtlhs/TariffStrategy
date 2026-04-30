@@ -1,0 +1,67 @@
+_format_version: '2.1'
+_transform: true
+
+services:
+  - name: auth-v1
+    url: http://supabase-auth:9999/verify
+    routes:
+      - name: auth-v1-all
+        strip_path: true
+        paths:
+          - /auth/v1/
+    plugins:
+      - name: cors
+  - name: auth-v1-token
+    url: http://supabase-auth:9999/token
+    routes:
+      - name: auth-v1-token
+        strip_path: true
+        paths:
+          - /auth/v1/token
+    plugins:
+      - name: cors
+  - name: auth-v1-user
+    url: http://supabase-auth:9999/user
+    routes:
+      - name: auth-v1-user
+        strip_path: true
+        paths:
+          - /auth/v1/user
+    plugins:
+      - name: cors
+  - name: auth-v1-otp
+    url: http://supabase-auth:9999/otp
+    routes:
+      - name: auth-v1-otp
+        strip_path: true
+        paths:
+          - /auth/v1/otp
+    plugins:
+      - name: cors
+  - name: rest-v1
+    url: http://supabase-rest:3000/
+    routes:
+      - name: rest-v1-all
+        strip_path: true
+        paths:
+          - /rest/v1/
+    plugins:
+      - name: cors
+  - name: realtime-v1
+    url: http://supabase-realtime:4000/socket/
+    routes:
+      - name: realtime-v1-all
+        strip_path: true
+        paths:
+          - /realtime/v1/
+    plugins:
+      - name: cors
+  - name: storage-v1
+    url: http://supabase-storage:5000/
+    routes:
+      - name: storage-v1-all
+        strip_path: true
+        paths:
+          - /storage/v1/
+    plugins:
+      - name: cors

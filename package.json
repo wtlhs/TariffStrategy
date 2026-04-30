@@ -17,6 +17,7 @@
     "postinstall": "echo skip"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.104.1",
     "i18next": "^24.2.2",
     "lucide-react": "^0.469.0",
     "react": "^18.3.1",

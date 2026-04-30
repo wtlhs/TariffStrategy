@@ -3,8 +3,8 @@ import type { TranslationKeys } from './zh'
 const en: TranslationKeys = {
   app: {
     name: 'Tariff Policy Tool',
-    subtitle: 'International Shipping Strategy Comparison',
-    description: 'Compare tariffs & shipping, AI recommends optimal route',
+    subtitle: 'US Import Tariff Calculator & Origin Comparison',
+    description: 'Compare tariffs & shipping, view cost breakdowns and risk alerts',
     loading: 'Loading...',
     offline: 'Offline',
     offlineTip: 'Some features unavailable, check your network',
@@ -46,7 +46,10 @@ const en: TranslationKeys = {
     costBreakdown: 'Cost Breakdown',
     customsDuty: 'Duty',
     section301: 'Section 301',
+    section122: 'Section 122 Temp Surcharge',
     adcvd: 'AD/CVD',
+    adCvdRisk: 'AD/CVD Risk Alert',
+    adCvdRiskDetail: 'This product may be subject to AD/CVD. Requires manual confirmation. Not included in confirmed total cost.',
     mpf: 'MPF',
     hmf: 'HMF',
     shipping: 'Shipping',
@@ -54,8 +57,14 @@ const en: TranslationKeys = {
     ftaApplied: 'FTA Applied',
     deMinimis: 'De Minimis',
     section232: 'Section 232',
-    reciprocalTariff: 'Reciprocal Tariff',
-    deMinimisRevoked: 'De Minimis Revoked',
+    reciprocalTariff: 'IEEPA Historical Tariff',
+    reciprocalTariffNote: 'IEEPA tariff invalidated by SCOTUS on 2026-02-20, no longer in effect',
+    section122Note: 'Section 122 temporary surcharge, effective until 2026-07-24, actual end date subject to official announcement',
+    deMinimisStatus: 'De Minimis Status',
+    deMinimisGloballySuspended: 'US de minimis globally suspended since 2025-08-29',
+    deMinimisSuspendedCnHk: 'CN/HK de minimis suspended since 2025-05-02',
+    deMinimisActive: 'De Minimis exemption active',
+    disclaimer: 'Results are based on current data and assumptions. Not legal, tax, or customs classification advice. Actual costs subject to CBP determination.',
   },
 
   data: {
@@ -238,6 +247,17 @@ const en: TranslationKeys = {
     link: 'Invite Link',
     reward: 'Both get 50 credits when friend signs up and checks in 3 days',
     copied: 'Link copied',
+  },
+
+  hs: {
+    search: 'Search HS code or product name',
+    selectSubCode: 'Select sub-classification',
+    subCodeHint: 'Same HS code may have multiple sub-categories. Select based on your product.',
+    noMatch: 'No matching HS code found',
+    cachedAt: 'Data cached at {{date}}',
+    fetchNew: 'Refresh',
+    source: 'Source: {{source}}',
+    dictLoading: 'Loading HS dictionary...',
   },
 
   auth: {

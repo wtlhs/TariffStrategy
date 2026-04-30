@@ -1,0 +1,215 @@
+version: '3.8'
+
+# 税率政策工具 — 后端完整部署
+# 使用方式: docker compose up -d
+
+services:
+  # ==================== Supabase ====================
+  # 基于官方 self-hosting 配置裁剪
+  # 参考: https://github.com/supabase/supabase/blob/master/docker/docker-compose.yml
+
+  supabase-db:
+    container_name: tariff-supabase-db
+    image: supabase/postgres:15.6.1.147
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: postgres
+    volumes:
+      - db_data:/var/lib/postgresql/data
+      - ./supabase/migrations:/docker-entrypoint-initdb.d:ro
+    ports:
+      - '5432:5432'
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  supabase-auth:
+    container_name: tariff-supabase-auth
+    image: supabase/gotrue:v2.158.1
+    depends_on:
+      supabase-db:
+        condition: service_healthy
+    environment:
+      GOTRUE_API_HOST: 0.0.0.0
+      GOTRUE_API_PORT: 9999
+      API_EXTERNAL_URL: ${API_EXTERNAL_URL}
+
+      GOTRUE_DB_DRIVER: postgres
+      GOTRUE_DB_DATABASE_URL: postgres://supabase_auth_admin:${POSTGRES_PASSWORD}@supabase-db:5432/postgres
+
+      GOTRUE_SITE_URL: ${SITE_URL}
+      GOTRUE_URI_ALLOW_LIST: ${URI_ALLOW_LIST}
+      GOTRUE_DISABLE_SIGNUP: 'false'
+
+      GOTRUE_JWT_ADMIN_ROLES: service_role
+      GOTRUE_JWT_AUD: authenticated
+      GOTRUE_JWT_DEFAULT_GROUP_NAME: authenticated
+      GOTRUE_JWT_EXP: ${JWT_EXPIRY}
+      GOTRUE_JWT_SECRET: ${JWT_SECRET}
+
+      GOTRUE_EXTERNAL_EMAIL_ENABLED: 'false'
+      GOTRUE_EXTERNAL_PHONE_ENABLED: 'true'
+      GOTRUE_SMS_AUTOCONFIRM: ${SMS_AUTOCONFIRM:-false}
+      GOTRUE_SMS_PROVIDER: tencent
+      GOTRUE_SMS_TENCENT_SECRET_ID: ${TENCENT_SMS_SECRET_ID}
+      GOTRUE_SMS_TENCENT_SECRET_KEY: ${TENCENT_SMS_SECRET_KEY}
+      GOTRUE_SMS_TENCENT_REGION: ${TENCENT_SMS_REGION:-ap-guangzhou}
+      GOTRUE_SMS_TENCENT_SIGN_NAME: ${TENCENT_SMS_SIGN_NAME}
+      GOTRUE_SMS_TENCENT_TEMPLATE_ID: ${TENCENT_SMS_TEMPLATE_ID}
+      GOTRUE_SMS_TENCENT_SDK_APP_ID: ${TENCENT_SMS_SDK_APP_ID}
+
+  supabase-rest:
+    container_name: tariff-supabase-rest
+    image: postgrest/postgrest:v12.0.1
+    depends_on:
+      supabase-db:
+        condition: service_healthy
+    environment:
+      PGRST_DB_URI: postgres://authenticator:${POSTGRES_PASSWORD}@supabase-db:5432/postgres
+      PGRST_DB_SCHEMAS: public,storage,graphql_public
+      PGRST_DB_ANON_ROLE: anon
+      PGRST_JWT_SECRET: ${JWT_SECRET}
+      PGRST_DB_USE_LEGACY_GUCS: 'false'
+
+  supabase-realtime:
+    container_name: tariff-supabase-realtime
+    image: supabase/realtime:v2.28.0
+    depends_on:
+      supabase-db:
+        condition: service_healthy
+    environment:
+      DB_HOST: supabase-db
+      DB_PORT: 5432
+      DB_USER: supabase_admin
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_NAME: postgres
+      DB_SSL: 'false'
+      PORT: 4000
+      JWT_SECRET: ${JWT_SECRET}
+      REPLICATION_MODE: RLS
+      REPLICATION_POLL_INTERVAL: 100
+      SECURE_CHANNELS: 'true'
+      SLOT_NAME: supabase_realtime_rls
+
+  supabase-storage:
+    container_name: tariff-supabase-storage
+    image: supabase/storage-api:v1.0.6
+    depends_on:
+      supabase-db:
+        condition: service_healthy
+    environment:
+      ANON_KEY: ${ANON_KEY}
+      SERVICE_KEY: ${SERVICE_ROLE_KEY}
+      POSTGREST_URL: http://supabase-rest:3000
+      PGRST_JWT_SECRET: ${JWT_SECRET}
+      DATABASE_URL: postgres://supabase_storage_admin:${POSTGRES_PASSWORD}@supabase-db:5432/postgres
+      STORAGE_BACKEND: file
+      FILE_STORAGE_BACKEND_PATH: /var/lib/storage
+      TENANT_ID: stub
+    volumes:
+      - storage_data:/var/lib/storage
+
+  supabase-kong:
+    container_name: tariff-supabase-kong
+    image: kong:2.8.1
+    depends_on:
+      - supabase-auth
+      - supabase-rest
+      - supabase-realtime
+      - supabase-storage
+    environment:
+      KONG_DATABASE: 'off'
+      KONG_DECLARATIVE_CONFIG: /home/kong/kong.yml
+    volumes:
+      - ./supabase/kong.yml:/home/kong/kong.yml:ro
+    ports:
+      - '${KONG_HTTP_PORT:-8000}:8000/tcp'
+      - '${KONG_HTTPS_PORT:-8443}:8443/tcp'
+
+  supabase-studio:
+    container_name: tariff-supabase-studio
+    image: supabase/studio:20240401
+    depends_on:
+      - supabase-kong
+    environment:
+      STUDIO_PG_META_URL: http://supabase-meta:8080
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      SUPABASE_URL: http://supabase-kong:8000
+      SUPABASE_ANON_KEY: ${ANON_KEY}
+      SUPABASE_SERVICE_KEY: ${SERVICE_ROLE_KEY}
+    ports:
+      - '${STUDIO_PORT:-3001}:3000'
+
+  supabase-meta:
+    container_name: tariff-supabase-meta
+    image: supabase/postgres-meta:v0.75.0
+    depends_on:
+      supabase-db:
+        condition: service_healthy
+    environment:
+      PG_META_PORT: 8080
+      PG_META_DB_HOST: supabase-db
+      PG_META_DB_PORT: 5432
+      PG_META_DB_NAME: postgres
+      PG_META_DB_USER: supabase_admin
+      PG_META_DB_PASSWORD: ${POSTGRES_PASSWORD}
+
+  # ==================== Worker ====================
+  tariff-worker:
+    container_name: tariff-worker
+    build:
+      context: ./worker
+      dockerfile: Dockerfile
+    depends_on:
+      - supabase-kong
+      - redis
+    environment:
+      NODE_ENV: production
+      PORT: 3002
+      SUPABASE_URL: http://supabase-kong:8000
+      SUPABASE_SERVICE_ROLE_KEY: ${SERVICE_ROLE_KEY}
+      REDIS_URL: redis://redis:6379
+      WECHAT_APP_ID: ${WECHAT_APP_ID:-}
+      WECHAT_MCH_ID: ${WECHAT_MCH_ID:-}
+      WECHAT_API_KEY_V3: ${WECHAT_API_KEY_V3:-}
+      WECHAT_SERIAL_NO: ${WECHAT_SERIAL_NO:-}
+      WECHAT_PRIVATE_KEY_PATH: /app/certs/wechat/apiclient_key.pem
+      ALIPAY_APP_ID: ${ALIPAY_APP_ID:-}
+      ALIPAY_PRIVATE_KEY_PATH: /app/certs/alipay/app_private_key.pem
+      ALIPAY_PUBLIC_KEY_PATH: /app/certs/alipay/alipay_public_key.pem
+    volumes:
+      - ./certs:/app/certs:ro
+    ports:
+      - '3002:3002'
+    restart: unless-stopped
+
+  redis:
+    container_name: tariff-redis
+    image: redis:7-alpine
+    volumes:
+      - redis_data:/data
+    ports:
+      - '6379:6379'
+
+  # ==================== Nginx ====================
+  nginx:
+    container_name: tariff-nginx
+    image: nginx:alpine
+    depends_on:
+      - supabase-kong
+      - tariff-worker
+    ports:
+      - '80:80'
+      - '443:443'
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./certs/ssl:/etc/nginx/ssl:ro
+      - ./pay-static:/usr/share/nginx/pay:ro
+    restart: unless-stopped
+
+volumes:
+  db_data:
+  storage_data:
+  redis_data:

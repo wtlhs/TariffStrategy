@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>税率政策工具 — 支付</title>
+  <style>
+    :root {
+      --primary: #f59e0b;
+      --primary-dark: #d97706;
+      --bg: #0f172a;
+      --card: #1e293b;
+      --border: #334155;
+      --text: #f1f5f9;
+      --muted: #94a3b8;
+      --success: #22c55e;
+      --error: #ef4444;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, 'Noto Sans SC', 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+
+    .container {
+      max-width: 420px;
+      width: 100%;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .header h1 {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin-bottom: 0.25rem;
+    }
+
+    .header p {
+      color: var(--muted);
+      font-size: 0.875rem;
+    }
+
+    .order-info {
+      text-align: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .order-amount {
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    .order-desc {
+      color: var(--muted);
+      font-size: 0.875rem;
+      margin-top: 0.25rem;
+    }
+
+    .channels {
+      display: flex;
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .channel-btn {
+      flex: 1;
+      padding: 0.75rem;
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      background: transparent;
+      color: var(--text);
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+    }
+
+    .channel-btn:hover {
+      border-color: var(--primary);
+    }
+
+    .channel-btn.active {
+      border-color: var(--primary);
+      background: rgba(245, 158, 11, 0.1);
+    }
+
+    .channel-btn .icon {
+      font-size: 1.5rem;
+      display: block;
+      margin-bottom: 0.25rem;
+    }
+
+    .qr-section {
+      text-align: center;
+      display: none;
+    }
+
+    .qr-section.visible { display: block; }
+
+    .qr-wrapper {
+      background: white;
+      padding: 1rem;
+      border-radius: 8px;
+      display: inline-block;
+      margin-bottom: 1rem;
+    }
+
+    .qr-wrapper canvas { display: block; }
+
+    .qr-hint {
+      color: var(--muted);
+      font-size: 0.875rem;
+    }
+
+    .countdown {
+      color: var(--muted);
+      font-size: 0.875rem;
+      margin-top: 0.5rem;
+    }
+
+    .countdown .time { color: var(--primary); font-weight: 600; }
+
+    .status-section { text-align: center; display: none; }
+    .status-section.visible { display: block; }
+
+    .spinner {
+      width: 2rem;
+      height: 2rem;
+      border: 2px solid var(--border);
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 0.75rem;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .success-icon {
+      font-size: 3rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .btn-secondary {
+      display: inline-block;
+      padding: 0.5rem 1.5rem;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--muted);
+      font-size: 0.875rem;
+      background: transparent;
+      cursor: pointer;
+      text-decoration: none;
+    }
+
+    .btn-secondary:hover { border-color: var(--primary); color: var(--text); }
+
+    .error-text { color: var(--error); font-size: 0.875rem; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card header">
+      <h1>税率政策工具</h1>
+      <p>安全支付</p>
+    </div>
+
+    <div class="card">
+      <div class="order-info">
+        <div class="order-amount" id="amount">¥--</div>
+        <div class="order-desc" id="desc">加载中...</div>
+      </div>
+
+      <!-- 渠道选择 -->
+      <div class="channels" id="channels">
+        <button class="channel-btn active" data-channel="wechat" onclick="selectChannel('wechat')">
+          <span class="icon">&#x1F4F1;</span>
+          微信支付
+        </button>
+        <button class="channel-btn" data-channel="alipay" onclick="selectChannel('alipay')">
+          <span class="icon">&#x1F4B3;</span>
+          支付宝
+        </button>
+      </div>
+
+      <!-- 二维码 -->
+      <div class="qr-section" id="qr-section">
+        <div class="qr-wrapper">
+          <canvas id="qr-canvas" width="200" height="200"></canvas>
+        </div>
+        <div class="qr-hint" id="qr-hint">请使用微信扫码支付</div>
+        <div class="countdown">剩余 <span class="time" id="countdown">30:00</span></div>
+      </div>
+
+      <!-- 等待状态 -->
+      <div class="status-section" id="status-waiting">
+        <div class="spinner"></div>
+        <p>等待支付确认...</p>
+      </div>
+
+      <!-- 成功 -->
+      <div class="status-section" id="status-success">
+        <div class="success-icon">&#x2705;</div>
+        <h2 style="margin-bottom: 0.5rem;">支付成功</h2>
+        <p id="success-desc" style="color: var(--muted); margin-bottom: 1rem;"></p>
+        <p style="color: var(--muted); font-size: 0.875rem;">请返回浏览器扩展继续使用</p>
+      </div>
+
+      <!-- 错误 -->
+      <div class="status-section" id="status-error">
+        <p class="error-text" id="error-text">支付失败，请重试</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- QR Code 生成库（纯 JS，无框架依赖） -->
+  <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
+
+  <script>
+    const API_BASE = window.location.origin
+    let orderId = null
+    let orderData = null
+    let selectedChannel = 'wechat'
+    let pollTimer = null
+    let countdownTimer = null
+    let expireSeconds = 1800 // 30 分钟
+
+    // 解析 URL 参数
+    function parseParams() {
+      const path = window.location.pathname
+      const match = path.match(/\/pay\/([\w-]+)/)
+      if (match) orderId = match[1]
+
+      const params = new URLSearchParams(window.location.search)
+      if (params.get('channel')) selectedChannel = params.get('channel')
+    }
+
+    // 加载订单信息
+    async function loadOrder() {
+      if (!orderId) {
+        showError('无效的订单链接')
+        return
+      }
+
+      try {
+        const res = await fetch(`${API_BASE}/rest/v1/payment_orders?id=eq.${orderId}&select=*`, {
+          headers: { 'apikey': getAnonKey() }
+        })
+        const orders = await res.json()
+        if (!orders || orders.length === 0) {
+          showError('订单不存在')
+          return
+        }
+
+        orderData = orders[0]
+        updateUI()
+      } catch (err) {
+        showError('加载订单失败')
+      }
+    }
+
+    function getAnonKey() {
+      // 从 meta 或全局配置读取，生产环境需要实际配置
+      return document.querySelector('meta[name="supabase-anon-key"]')?.content || ''
+    }
+
+    // 更新 UI
+    function updateUI() {
+      const amount = (orderData.amount_cents / 100).toFixed(2)
+      document.getElementById('amount').textContent = `¥${amount}`
+
+      let desc = ''
+      if (orderData.order_type === 'credits') {
+        desc = `${orderData.credit_amount} 积分`
+      } else if (orderData.order_type === 'plan') {
+        const cycleText = orderData.plan_cycle === 'yearly' ? '年付' : '月付'
+        desc = `${orderData.plan_tier} ${cycleText}`
+      }
+      document.getElementById('desc').textContent = desc
+
+      // 计算剩余时间
+      if (orderData.expired_at) {
+        const expireAt = new Date(orderData.expired_at).getTime()
+        expireSeconds = Math.max(0, Math.floor((expireAt - Date.now()) / 1000))
+      }
+
+      // 自动选中渠道
+      if (orderData.payment_channel) {
+        selectedChannel = orderData.payment_channel
+      }
+
+      highlightChannel()
+
+      // 如果已支付，直接显示成功
+      if (orderData.status === 'paid') {
+        showSuccess()
+        return
+      }
+
+      if (orderData.status === 'expired') {
+        showError('订单已过期，请重新下单')
+        return
+      }
+
+      // 生成二维码
+      generateQR()
+    }
+
+    // 切换支付渠道
+    function selectChannel(channel) {
+      selectedChannel = channel
+      highlightChannel()
+      generateQR()
+    }
+
+    function highlightChannel() {
+      document.querySelectorAll('.channel-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.channel === selectedChannel)
+      })
+    }
+
+    // 生成二维码
+    function generateQR() {
+      if (!orderData || orderData.status !== 'pending') return
+
+      // TODO: 调用 Worker API 获取真实二维码 URL
+      // 当前使用订单号作为二维码内容占位
+      const qrContent = `tariff://pay/${orderData.order_no}?channel=${selectedChannel}`
+
+      try {
+        const qr = qrcode(0, 'M')
+        qr.addData(qrContent)
+        qr.make()
+
+        const canvas = document.getElementById('qr-canvas')
+        const ctx = canvas.getContext('2d')
+        const moduleCount = qr.getModuleCount()
+        const cellSize = Math.floor(200 / moduleCount)
+
+        canvas.width = moduleCount * cellSize
+        canvas.height = moduleCount * cellSize
+
+        ctx.fillStyle = '#ffffff'
+        ctx.fillRect(0, 0, canvas.width, canvas.height)
+
+        for (let row = 0; row < moduleCount; row++) {
+          for (let col = 0; col < moduleCount; col++) {
+            ctx.fillStyle = qr.isDark(row, col) ? '#000000' : '#ffffff'
+            ctx.fillRect(col * cellSize, row * cellSize, cellSize, cellSize)
+          }
+        }
+
+        document.getElementById('qr-section').classList.add('visible')
+        document.getElementById('qr-hint').textContent =
+          selectedChannel === 'wechat' ? '请使用微信扫码支付' : '请使用支付宝扫码支付'
+
+        startPolling()
+        startCountdown()
+      } catch (err) {
+        console.error('QR generation failed:', err)
+        document.getElementById('qr-section').classList.add('visible')
+        document.getElementById('qr-hint').textContent = '二维码生成失败，请刷新页面重试'
+      }
+    }
+
+    // 轮询订单状态
+    function startPolling() {
+      if (pollTimer) clearInterval(pollTimer)
+
+      pollTimer = setInterval(async () => {
+        try {
+          const res = await fetch(`${API_BASE}/rest/v1/payment_orders?id=eq.${orderId}&select=status`, {
+            headers: { 'apikey': getAnonKey() }
+          })
+          const orders = await res.json()
+
+          if (orders?.[0]?.status === 'paid') {
+            clearInterval(pollTimer)
+            orderData.status = 'paid'
+            showSuccess()
+          } else if (orders?.[0]?.status === 'expired') {
+            clearInterval(pollTimer)
+            showError('订单已过期')
+          }
+        } catch {
+          // 网络错误，继续轮询
+        }
+      }, 3000)
+    }
+
+    // 倒计时
+    function startCountdown() {
+      if (countdownTimer) clearInterval(countdownTimer)
+
+      countdownTimer = setInterval(() => {
+        expireSeconds--
+        if (expireSeconds <= 0) {
+          clearInterval(countdownTimer)
+          showError('订单已过期，请重新下单')
+          return
+        }
+
+        const minutes = Math.floor(expireSeconds / 60)
+        const seconds = expireSeconds % 60
+        document.getElementById('countdown').textContent =
+          `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
+      }, 1000)
+    }
+
+    // 显示成功
+    function showSuccess() {
+      document.getElementById('channels').style.display = 'none'
+      document.getElementById('qr-section').classList.remove('visible')
+      document.getElementById('status-waiting').style.display = 'none'
+      document.getElementById('status-success').classList.add('visible')
+
+      let desc = '支付已完成'
+      if (orderData?.order_type === 'credits') {
+        desc = `已到账 +${orderData.credit_amount} 积分`
+      } else if (orderData?.order_type === 'plan') {
+        desc = `${orderData.plan_tier} 套餐已激活`
+      }
+      document.getElementById('success-desc').textContent = desc
+
+      if (pollTimer) clearInterval(pollTimer)
+      if (countdownTimer) clearInterval(countdownTimer)
+    }
+
+    // 显示错误
+    function showError(message) {
+      document.getElementById('qr-section').classList.remove('visible')
+      document.getElementById('status-error').classList.add('visible')
+      document.getElementById('error-text').textContent = message || '支付失败'
+
+      if (pollTimer) clearInterval(pollTimer)
+      if (countdownTimer) clearInterval(countdownTimer)
+    }
+
+    // 初始化
+    parseParams()
+    loadOrder()
+  </script>
+</body>
+</html>

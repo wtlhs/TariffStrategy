@@ -8,6 +8,7 @@ import { Bell, Plus, Trash2, ToggleLeft, ToggleRight, Mail, MessageSquare, Smart
 import { useSubscriptionStore } from '@/store/subscription-store'
 import { QuotaIndicator } from '@/components/commercial/PlanBadge'
 import { generateId } from '@/lib/credit-engine'
+import { supabaseAdapter } from '@/services/supabase'
 import type { TariffSubscription, RuleType } from '@/types'
 
 const RULE_TYPE_OPTIONS: { value: RuleType; label: string }[] = [
@@ -30,13 +31,23 @@ export function SubscriptionPage() {
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState({ ruleName: '', ruleType: 'product' as RuleType, channels: ['email'] as string[] })
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
     if (!form.ruleName) return
     const sub: TariffSubscription = {
       id: generateId(), ruleName: form.ruleName, ruleType: form.ruleType,
       ruleConfig: {}, channels: form.channels, isActive: true, createdAt: new Date().toISOString(),
     }
     addSubscription(sub)
+
+    // 同步到后端（如果 Supabase 已配置）
+    if (supabaseAdapter.isConfigured) {
+      await supabaseAdapter.createSubscription({
+        ruleType: form.ruleType,
+        ruleConfig: {},
+        channels: form.channels,
+      })
+    }
+
     setForm({ ruleName: '', ruleType: 'product', channels: ['email'] })
     setShowForm(false)
   }

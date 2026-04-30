@@ -258,36 +258,82 @@ export const SECTION_232_MAPPING: Record<string, { category: string; rate: numbe
 }
 
 // ============================================================
-// 4c. 对等关税率（IEEPA/Reciprocal Tariffs）
-// 2025.4 宣布 → 2026.2 被 SCOTUS 推翻
-// 2026.8 有新一轮提案
-// currentRate = 当前生效率（2026.4 为 0）
+// 4c. IEEPA 对等关税（历史税种）
+// 2025.4 宣布 → 2026.2 被 SCOTUS 推翻 (Learning Resources v. Trump)
+// 当前不再生效，仅保留历史查询用途
 // ============================================================
 
-export const RECIPROCAL_TARIFFS: Record<string, {
+export const IEEPA_HISTORICAL: Record<string, {
+  /** 2025.4 对等关税率 */
   april2025Rate: number
-  currentRate: number
-  proposedAug2026: number
+  /** SCOTUS 推翻后清零 */
+  currentRate: 0
+  /** 法律依据 */
+  legalBasis: string
+  /** 失效日期 */
+  invalidatedDate: string
 }> = {
-  CN: { april2025Rate: 0.34, currentRate: 0, proposedAug2026: 0.15 },
-  EU: { april2025Rate: 0.20, currentRate: 0, proposedAug2026: 0.15 },
-  JP: { april2025Rate: 0.24, currentRate: 0, proposedAug2026: 0.15 },
-  VN: { april2025Rate: 0.46, currentRate: 0, proposedAug2026: 0.20 },
-  KR: { april2025Rate: 0.25, currentRate: 0, proposedAug2026: 0.15 },
-  SG: { april2025Rate: 0.10, currentRate: 0, proposedAug2026: 0.10 },
-  MX: { april2025Rate: 0.25, currentRate: 0, proposedAug2026: 0.10 },
-  CA: { april2025Rate: 0.25, currentRate: 0, proposedAug2026: 0.10 },
+  CN: { april2025Rate: 0.34, currentRate: 0, legalBasis: 'IEEPA → SCOTUS invalidated', invalidatedDate: '2026-02-20' },
+  EU: { april2025Rate: 0.20, currentRate: 0, legalBasis: 'IEEPA → SCOTUS invalidated', invalidatedDate: '2026-02-20' },
+  JP: { april2025Rate: 0.24, currentRate: 0, legalBasis: 'IEEPA → SCOTUS invalidated', invalidatedDate: '2026-02-20' },
+  VN: { april2025Rate: 0.46, currentRate: 0, legalBasis: 'IEEPA → SCOTUS invalidated', invalidatedDate: '2026-02-20' },
+  KR: { april2025Rate: 0.25, currentRate: 0, legalBasis: 'IEEPA → SCOTUS invalidated', invalidatedDate: '2026-02-20' },
+  SG: { april2025Rate: 0.10, currentRate: 0, legalBasis: 'IEEPA → SCOTUS invalidated', invalidatedDate: '2026-02-20' },
+  MX: { april2025Rate: 0.25, currentRate: 0, legalBasis: 'IEEPA → SCOTUS invalidated', invalidatedDate: '2026-02-20' },
+  CA: { april2025Rate: 0.25, currentRate: 0, legalBasis: 'IEEPA → SCOTUS invalidated', invalidatedDate: '2026-02-20' },
+  RO: { april2025Rate: 0.15, currentRate: 0, legalBasis: 'IEEPA → SCOTUS invalidated', invalidatedDate: '2026-02-20' },
+  DE: { april2025Rate: 0.20, currentRate: 0, legalBasis: 'IEEPA → SCOTUS invalidated', invalidatedDate: '2026-02-20' },
 }
 
+/** @deprecated 使用 IEEPA_HISTORICAL，此名称仅为向后兼容保留 */
+export const RECIPROCAL_TARIFFS = IEEPA_HISTORICAL
+
 // ============================================================
-// 4d. De Minimis 按国别
-// 中国/香港 $800 豁免已于 2025 年取消
+// 4d. Section 122 临时进口附加税
+// Trade Act of 1974 Section 122
+// 2026-02-20 白宫公告，2026-02-24 生效
+// 150 天临时期限，通常 10%，有豁免清单
+// 与 Section 232、Chapter 99 有叠加/排除规则
+// 实际终止日以官方后续公告为准
 // ============================================================
 
-export const DE_MINIMIS_BY_COUNTRY: Record<string, { threshold: number; enabled: boolean }> = {
-  CN: { threshold: 0, enabled: false },
-  HK: { threshold: 0, enabled: false },
-  default: { threshold: 800, enabled: true },
+export const SECTION_122_CONFIG = {
+  /** 生效日期 */
+  effectiveDate: '2026-02-24',
+  /** 预计到期日（150天后） */
+  estimatedExpiryDate: '2026-07-24',
+  /** 默认税率 10% */
+  defaultRate: 0.10,
+  /** 法律依据 */
+  legalBasis: 'Trade Act of 1974, Section 122',
+  /** 豁免国家/地区（USMCA 满足原产地规则的商品） */
+  exemptedOrigins: ['MX', 'CA'],
+  /** 是否已被 Section 232 覆盖的商品可豁免（避免双重叠加） */
+  section232OverlapExempt: true,
+  /** 数据来源 */
+  sourceUrl: 'https://www.whitehouse.gov/fact-sheets/2026/02/',
+  /** 数据采集时间 */
+  dataFetchedAt: '2026-04-15',
+} as const
+
+// ============================================================
+// 4e. De Minimis 按国别
+// 2025-08-29：美国 de minimis 全球暂停 (CBP)
+// 2025-05-02：CN/HK 先行暂停
+// 当前默认：全球暂停
+// ============================================================
+
+export const DE_MINIMIS_BY_COUNTRY: Record<string, {
+  threshold: number
+  enabled: boolean
+  /** 暂停日期 */
+  suspendedDate?: string
+  /** 暂停原因 */
+  reason?: string
+}> = {
+  CN: { threshold: 0, enabled: false, suspendedDate: '2025-05-02', reason: 'CBP 先行暂停 CN/HK de minimis' },
+  HK: { threshold: 0, enabled: false, suspendedDate: '2025-05-02', reason: 'CBP 先行暂停 CN/HK de minimis' },
+  default: { threshold: 0, enabled: false, suspendedDate: '2025-08-29', reason: 'CBP de minimis 全球暂停' },
 }
 
 // ============================================================
@@ -328,23 +374,29 @@ export function generateDemoRoutes(hsCode: string, goodsValue: number) {
     // Section 232（全球适用）
     const section232Rate = s232 ? s232.rate : 0
 
-    // AD/CVD
+    // Section 122 临时进口附加税（全球适用，USMCA 国家豁免）
+    const section122Rate = (!SECTION_122_CONFIG.exemptedOrigins.includes(origin.code as 'MX' | 'CA'))
+      ? SECTION_122_CONFIG.defaultRate
+      : 0
+
+    // AD/CVD（仅风险提示，不自动计入总成本）
     const adCvdRate = 0
 
-    // 对等关税（当前 IEEPA 已推翻）
+    // IEEPA 历史关税（SCOTUS 2026-02-20 推翻，不再生效）
     const reciprocalTariffRate = RECIPROCAL_TARIFFS[origin.code]?.currentRate ?? 0
 
-    // De Minimis
+    // De Minimis（全球暂停）
     const dmConfig = DE_MINIMIS_BY_COUNTRY[origin.code] ?? DE_MINIMIS_BY_COUNTRY.default
-    const deMinimisRevoked = !dmConfig.enabled
+    const deMinimisSuspended = !dmConfig.enabled
 
-    // 总税率
-    const totalTaxRate = effectiveRate + section301Rate + section232Rate + adCvdRate + reciprocalTariffRate
+    // 总税率（AD/CVD 不计入确定总成本）
+    const totalTaxRate = effectiveRate + section301Rate + section232Rate + section122Rate + reciprocalTariffRate
 
     // 费用计算
     const customsDuty = goodsValue * effectiveRate
     const section301 = goodsValue * section301Rate
     const section232 = goodsValue * section232Rate
+    const section122 = goodsValue * section122Rate
     const reciprocalTariff = goodsValue * reciprocalTariffRate
     const mpf = Math.max(
       US_IMPORT_FEES.mpfMin,
@@ -358,6 +410,7 @@ export function generateDemoRoutes(hsCode: string, goodsValue: number) {
       customsDuty +
       section301 +
       section232 +
+      section122 +
       reciprocalTariff +
       mpf +
       hmf +
@@ -376,6 +429,7 @@ export function generateDemoRoutes(hsCode: string, goodsValue: number) {
       ftaName: origin.ftaName,
       section301Rate,
       section232Rate,
+      section122Rate,
       adCvdRate,
       reciprocalTariffRate,
       totalTaxRate,
@@ -383,8 +437,10 @@ export function generateDemoRoutes(hsCode: string, goodsValue: number) {
       customsDuty,
       section301,
       section232,
+      section122,
       adCvd: 0,
       reciprocalTariff,
+      adCvdRisk: null,
       mpf,
       hmf,
       shippingCost,
@@ -393,7 +449,7 @@ export function generateDemoRoutes(hsCode: string, goodsValue: number) {
       shippingDays: origin.shippingDays,
       shippingMode: 'ocean' as const,
       geopoliticalRisk: origin.geopoliticalRisk,
-      deMinimisRevoked,
+      deMinimisStatus: deMinimisSuspended ? 'globally_suspended' as const : 'active' as const,
     }
   })
 }
@@ -527,3 +583,293 @@ export const DATA_SOURCES = {
     method: '手动维护',
   },
 } as const
+
+// ============================================================
+// 8. TariffMeasure 税种定义（P0-B 可信计算模型）
+// ============================================================
+
+import type { TariffDictEntry, TariffMeasure } from '@/types'
+
+/** 基础 MFN 关税 — 来自 USITC HTS 年度版 */
+export const MEASURE_MFN: TariffMeasure = {
+  type: 'mfn',
+  legalBasis: 'Harmonized Tariff Schedule of the United States (HTSUS), Column 1, General',
+  rate: 0, // 由具体 HS 编码决定
+  rateUnit: 'ad_valorem',
+  effectiveDate: '2026-01-01',
+  stackingRule: 'additive',
+  sourceUrl: 'https://hts.usitc.gov',
+  dataFetchedAt: '2026-01-01',
+  confidence: 'high',
+  notes: 'MFN 税率按 HS6/HTS10 查询，年度更新',
+}
+
+/** FTA 优惠税率 — 取代 MFN */
+export const MEASURE_FTA: TariffMeasure = {
+  type: 'preferential',
+  legalBasis: 'Bilateral/Regional Free Trade Agreements',
+  rate: 0,
+  rateUnit: 'ad_valorem',
+  effectiveDate: '2026-01-01',
+  stackingRule: 'max_of', // 与 MFN 取较低值
+  sourceUrl: 'https://hts.usitc.gov',
+  dataFetchedAt: '2026-01-01',
+  confidence: 'high',
+  notes: 'FTA 税率需满足原产地规则，与 MFN 取较低值',
+}
+
+/** Section 301 — 对华惩罚性关税 */
+export const MEASURE_SECTION_301: TariffMeasure = {
+  type: 'section301',
+  legalBasis: 'Trade Act of 1974, Section 301; USTR Lists 1-4A + EV/Solar/Semi',
+  rate: 0,
+  rateUnit: 'ad_valorem',
+  effectiveDate: '2018-07-06',
+  stackingRule: 'additive',
+  exemptions: ['List-specific exclusions (expired)'],
+  sourceUrl: 'https://ustr.gov/issue-areas/enforcement/section-301-investigations/tariff-actions',
+  dataFetchedAt: '2026-04-15',
+  confidence: 'high',
+  notes: '仅适用于中国原产商品，按清单分批生效',
+}
+
+/** Section 232 — 钢铝/汽车全球关税 */
+export const MEASURE_SECTION_232: TariffMeasure = {
+  type: 'section232',
+  legalBasis: 'Trade Expansion Act of 1962, Section 232',
+  rate: 0.25,
+  rateUnit: 'ad_valorem',
+  effectiveDate: '2018-03-23',
+  stackingRule: 'additive',
+  exemptions: ['USMCA steel/aluminum (quota-based)', 'Certain bilateral agreements'],
+  sourceUrl: 'https://www.cbp.gov/trade/programs-administration/entry-summary/232-702-tariffs-steel-aluminum',
+  dataFetchedAt: '2026-04-15',
+  confidence: 'high',
+  notes: '覆盖 HTS 72-73 章（钢铁）、76 章（铝）、87 章（汽车）及衍生品',
+}
+
+/** Section 122 — 临时进口附加税 */
+export const MEASURE_SECTION_122: TariffMeasure = {
+  type: 'section122',
+  legalBasis: 'Trade Act of 1974, Section 122',
+  rate: 0.10,
+  rateUnit: 'ad_valorem',
+  effectiveDate: '2026-02-24',
+  expiryDate: '2026-07-24',
+  stackingRule: 'additive',
+  exemptions: ['USMCA (MX/CA) 满足原产地规则', 'Section 232 覆盖商品可豁免重叠'],
+  sourceUrl: 'https://www.whitehouse.gov/fact-sheets/2026/02/',
+  dataFetchedAt: '2026-04-15',
+  confidence: 'medium',
+  notes: '150 天临时期限，实际终止日以官方后续公告为准',
+}
+
+/** IEEPA 对等关税 — 历史税种 */
+export const MEASURE_IEEPA: TariffMeasure = {
+  type: 'ieepa_historical',
+  legalBasis: 'International Emergency Economic Powers Act (IEEPA) → SCOTUS invalidated 2026-02-20',
+  rate: 0,
+  rateUnit: 'ad_valorem',
+  effectiveDate: '2025-04-09',
+  expiryDate: '2026-02-20',
+  stackingRule: 'additive',
+  sourceUrl: 'https://supreme.justia.com/cases/federal/us/607/24-1287/',
+  dataFetchedAt: '2026-04-15',
+  confidence: 'high',
+  notes: 'Learning Resources, Inc. v. Trump 案推翻，当前不再生效',
+}
+
+/** MPF — 商品处理费 */
+export const MEASURE_MPF: TariffMeasure = {
+  type: 'mfn',
+  legalBasis: '19 USC § 58c; CBP Merchandise Processing Fee',
+  rate: 0.003464,
+  rateUnit: 'ad_valorem',
+  effectiveDate: '2024-10-01',
+  stackingRule: 'additive',
+  sourceUrl: 'https://www.cbp.gov/trade/basic-import-export/importing-goods-overview',
+  dataFetchedAt: '2026-04-01',
+  confidence: 'high',
+  notes: '最低 $31.67，最高 $614.35；正式进口 $2,500 以上',
+}
+
+/** HMF — 港口维护费 */
+export const MEASURE_HMF: TariffMeasure = {
+  type: 'mfn',
+  legalBasis: 'Harbor Maintenance Revenue Act of 1986',
+  rate: 0.00125,
+  rateUnit: 'ad_valorem',
+  effectiveDate: '2024-10-01',
+  stackingRule: 'additive',
+  sourceUrl: 'https://www.cbp.gov/trade/basic-import-export/importing-goods-overview',
+  dataFetchedAt: '2026-04-01',
+  confidence: 'high',
+  notes: '仅海运适用',
+}
+
+// ============================================================
+// 9. HS 编码字典种子数据（美国 HTS，P0 阶段 5 个品类展开）
+// ============================================================
+
+export const MOCK_TARIFF_DICT_US: TariffDictEntry[] = [
+  {
+    hs6: '848210',
+    nameZh: '滚珠轴承',
+    nameEn: 'Ball bearings',
+    keywords: ['轴承', 'bearing', 'ball bearing', '滚珠', 'bearing unit'],
+    subCodes: [
+      {
+        code: '8482.10.10.00',
+        descriptionZh: '组合式径向推力滚珠轴承',
+        descriptionEn: 'Combined radial and thrust ball bearings',
+        mfnRate: 0.09,
+        section301: { list: 'List 3', rate: 0.25 },
+        section232: { category: '钢铁类', rate: 0.25 },
+        ftaRates: { KORUS: 0, 'US-Singapore FTA': 0, USMCA: 0 },
+      },
+      {
+        code: '8482.10.50.00',
+        descriptionZh: '其他滚珠轴承（非组合式）',
+        descriptionEn: 'Other ball bearings, not combined types',
+        mfnRate: 0.09,
+        section301: { list: 'List 3', rate: 0.25 },
+        section232: { category: '钢铁类', rate: 0.25 },
+        ftaRates: { KORUS: 0, 'US-Singapore FTA': 0, USMCA: 0 },
+      },
+    ],
+  },
+  {
+    hs6: '850110',
+    nameZh: '电动机（小型）',
+    nameEn: 'Electric motors (small)',
+    keywords: ['电机', '电动机', 'motor', 'electric motor', '马达'],
+    subCodes: [
+      {
+        code: '8501.10.10.00',
+        descriptionZh: '输出功率不超过 18.65W 的电动机',
+        descriptionEn: 'Motors with output not exceeding 18.65W',
+        mfnRate: 0.028,
+        section301: { list: 'List 3', rate: 0.25 },
+        ftaRates: { KORUS: 0, 'US-Singapore FTA': 0, USMCA: 0 },
+      },
+      {
+        code: '8501.10.40.00',
+        descriptionZh: '输出功率 18.65W~746W 的电动机',
+        descriptionEn: 'Motors with output exceeding 18.65W but not exceeding 746W',
+        mfnRate: 0.028,
+        section301: { list: 'List 3', rate: 0.25 },
+        ftaRates: { KORUS: 0, 'US-Singapore FTA': 0, USMCA: 0 },
+      },
+      {
+        code: '8501.10.60.00',
+        descriptionZh: '输出功率 746W~7.5kW 的电动机',
+        descriptionEn: 'Motors with output exceeding 746W but not exceeding 7.5kW',
+        mfnRate: 0.028,
+        section301: { list: 'List 3', rate: 0.25 },
+        ftaRates: { KORUS: 0, 'US-Singapore FTA': 0, USMCA: 0 },
+      },
+    ],
+  },
+  {
+    hs6: '611020',
+    nameZh: '棉制针织衫',
+    nameEn: 'Cotton knit garments',
+    keywords: ['针织', '毛衣', '针织衫', 'sweater', 'cotton knit', 'pullover', '套头衫'],
+    subCodes: [
+      {
+        code: '6110.20.10.00',
+        descriptionZh: '棉制男式针织套头衫',
+        descriptionEn: "Men's cotton knit pullovers",
+        mfnRate: 0.166,
+        section301: { list: 'List 4A', rate: 0.075 },
+        ftaRates: { KORUS: 0, 'US-Singapore FTA': 0, USMCA: 0 },
+      },
+      {
+        code: '6110.20.20.00',
+        descriptionZh: '棉制女式针织套头衫',
+        descriptionEn: "Women's cotton knit pullovers",
+        mfnRate: 0.166,
+        section301: { list: 'List 4A', rate: 0.075 },
+        ftaRates: { KORUS: 0, 'US-Singapore FTA': 0, USMCA: 0 },
+      },
+      {
+        code: '6110.20.60.00',
+        descriptionZh: '其他棉制针织衫（含儿童）',
+        descriptionEn: 'Other cotton knit garments (including children)',
+        mfnRate: 0.166,
+        section301: { list: 'List 4A', rate: 0.075 },
+        ftaRates: { KORUS: 0, 'US-Singapore FTA': 0, USMCA: 0 },
+      },
+    ],
+  },
+  {
+    hs6: '940540',
+    nameZh: 'LED 灯具',
+    nameEn: 'LED lighting fixtures',
+    keywords: ['LED', '灯', '照明', 'lighting', 'lamp', '灯具', 'light'],
+    subCodes: [
+      {
+        code: '9405.40.10.00',
+        descriptionZh: 'LED 灯带及模组',
+        descriptionEn: 'LED light strips and modules',
+        mfnRate: 0.039,
+        section301: { list: 'List 3', rate: 0.25 },
+        section232: { category: '含铝/钢', rate: 0.25 },
+        ftaRates: { KORUS: 0, 'US-Singapore FTA': 0, USMCA: 0 },
+      },
+      {
+        code: '9405.40.20.00',
+        descriptionZh: 'LED 吸顶灯/面板灯',
+        descriptionEn: 'LED ceiling/panel lights',
+        mfnRate: 0.039,
+        section301: { list: 'List 3', rate: 0.25 },
+        section232: { category: '含铝/钢', rate: 0.25 },
+        ftaRates: { KORUS: 0, 'US-Singapore FTA': 0, USMCA: 0 },
+      },
+      {
+        code: '9405.40.60.00',
+        descriptionZh: '其他 LED 灯具',
+        descriptionEn: 'Other LED lighting fixtures',
+        mfnRate: 0.039,
+        section301: { list: 'List 3', rate: 0.25 },
+        section232: { category: '含铝/钢', rate: 0.25 },
+        ftaRates: { KORUS: 0, 'US-Singapore FTA': 0, USMCA: 0 },
+      },
+    ],
+  },
+  {
+    hs6: '870899',
+    nameZh: '汽车零部件（通用）',
+    nameEn: 'Auto parts (general)',
+    keywords: ['汽车零件', 'auto part', '汽车配件', 'vehicle part', '车用'],
+    subCodes: [
+      {
+        code: '8708.99.10.00',
+        descriptionZh: '汽车用绞盘及千斤顶',
+        descriptionEn: 'Winches and jacks for vehicles',
+        mfnRate: 0.025,
+        section301: { list: 'List 3', rate: 0.25 },
+        section232: { category: '汽车零部件', rate: 0.25 },
+        ftaRates: { KORUS: 0, 'US-Singapore FTA': 0, USMCA: 0 },
+      },
+      {
+        code: '8708.99.30.00',
+        descriptionZh: '汽车用铰链及门锁',
+        descriptionEn: 'Hinges and door locks for vehicles',
+        mfnRate: 0.025,
+        section301: { list: 'List 3', rate: 0.25 },
+        section232: { category: '汽车零部件', rate: 0.25 },
+        ftaRates: { KORUS: 0, 'US-Singapore FTA': 0, USMCA: 0 },
+      },
+      {
+        code: '8708.99.60.00',
+        descriptionZh: '其他汽车零部件（未列名）',
+        descriptionEn: 'Other motor vehicle parts (not elsewhere specified)',
+        mfnRate: 0.025,
+        section301: { list: 'List 3', rate: 0.25 },
+        section232: { category: '汽车零部件', rate: 0.25 },
+        ftaRates: { KORUS: 0, 'US-Singapore FTA': 0, USMCA: 0 },
+      },
+    ],
+  },
+]

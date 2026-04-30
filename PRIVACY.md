@@ -48,7 +48,7 @@
 
 ### 7. 联系方式
 
-如有隐私相关问题，请联系：privacy@tariff-tool.example.com
+如有隐私相关问题，请联系：support@tariffstrategy.com
 
 ---
 
@@ -91,4 +91,4 @@ This product is not intended for users under 13 years of age.
 
 ### 7. Contact
 
-Privacy inquiries: privacy@tariff-tool.example.com
+Privacy inquiries: support@tariffstrategy.com

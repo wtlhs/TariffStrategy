@@ -100,6 +100,19 @@ export async function sendWebhookNotification(
   }
 }
 
+async function hmacSha256Base64(key: string, message: string): Promise<string> {
+  const encoder = new TextEncoder()
+  const cryptoKey = await crypto.subtle.importKey(
+    'raw',
+    encoder.encode(key),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign'],
+  )
+  const signature = await crypto.subtle.sign('HMAC', cryptoKey, encoder.encode(message))
+  return btoa(String.fromCharCode(...new Uint8Array(signature)))
+}
+
 export async function sendDingtalkNotification(
   webhook: string,
   secret: string,
@@ -108,9 +121,7 @@ export async function sendDingtalkNotification(
 ): Promise<boolean> {
   const timestamp = Date.now()
   const stringToSign = `${timestamp}\n${secret}`
-
-  // Service Worker 没有 crypto.subtle.sign HMAC，简化处理
-  const sign = btoa(stringToSign)
+  const sign = await hmacSha256Base64(secret, stringToSign)
   const url = `${webhook}&timestamp=${timestamp}&sign=${encodeURIComponent(sign)}`
 
   return sendWebhookNotification(url, {
@@ -198,6 +209,8 @@ export interface SimulatedChange {
  * V2 将对接真实后端 API
  */
 export function detectSimulatedChanges(): SimulatedChange[] {
+  if (!import.meta.env.DEV) return []
+
   // 30% 概率产生变化（演示用）
   if (Math.random() > 0.3) return []
 

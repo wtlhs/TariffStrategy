@@ -9,6 +9,7 @@ interface CheckInState {
   streak: number
   lastCheckIn: string | null
   makeupUsedThisMonth: number
+  lastMakeupResetMonth: string
 
   checkIn: (record: CheckInRecord) => void
   makeup: (record: CheckInRecord) => void
@@ -25,6 +26,7 @@ export const useCheckInStore = create<CheckInState>()(
       streak: 0,
       lastCheckIn: null,
       makeupUsedThisMonth: 0,
+      lastMakeupResetMonth: '',
 
       checkIn: (record) =>
         set((state) => ({
@@ -47,7 +49,10 @@ export const useCheckInStore = create<CheckInState>()(
 
       setStreak: (days) => set({ streak: days }),
 
-      resetMonthlyMakeup: () => set({ makeupUsedThisMonth: 0 }),
+      resetMonthlyMakeup: () => {
+        const month = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`
+        set({ makeupUsedThisMonth: 0, lastMakeupResetMonth: month })
+      },
     }),
     {
       name: 'tariff-checkin',

@@ -7,12 +7,23 @@ import { useCheckInStore } from '@/store/checkin-store'
 import { useUserStore } from '@/store/user-store'
 import { calculateCheckInCredits } from '@/lib/credit-engine'
 
+function getCurrentMonth(): string {
+  return `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`
+}
+
 export function useCheckIn() {
   const streak = useCheckInStore((s) => s.streak)
   const lastCheckIn = useCheckInStore((s) => s.lastCheckIn)
   const checkIns = useCheckInStore((s) => s.checkIns)
   const makeupUsed = useCheckInStore((s) => s.makeupUsedThisMonth)
+  const lastResetMonth = useCheckInStore((s) => s.lastMakeupResetMonth)
+  const resetMonthlyMakeup = useCheckInStore((s) => s.resetMonthlyMakeup)
   const plan = useUserStore((s) => s.user?.plan ?? 'free')
+
+  const currentMonth = getCurrentMonth()
+  if (lastResetMonth !== currentMonth) {
+    resetMonthlyMakeup()
+  }
 
   const today = new Date().toISOString().split('T')[0]
   const hasCheckedInToday = lastCheckIn === today

@@ -6,6 +6,7 @@
  */
 
 import { apiClient } from './api-client'
+import { supabaseAdapter } from './supabase'
 import { useUserStore } from '@/store/user-store'
 import type { UserAccount } from '@/types'
 import { generateId } from '@/lib/credit-engine'
@@ -77,6 +78,13 @@ export async function loginWithApiKey(params: LoginParams): Promise<UserAccount>
 export async function sendVerificationCode(phone: string): Promise<{ success: boolean; error?: string }> {
   const store = useUserStore.getState()
 
+  // 优先使用 Supabase Auth
+  if (supabaseAdapter.isConfigured && store.isOnline) {
+    const result = await supabaseAdapter.loginWithPhone(phone)
+    if (result.success) return { success: true }
+    return { success: false, error: result.error }
+  }
+
   if (!store.isOnline) {
     return { success: true }
   }
@@ -88,7 +96,6 @@ export async function sendVerificationCode(phone: string): Promise<{ success: bo
     }
     return { success: true }
   } catch {
-    // API 不可用时回退到 mock
     return { success: true }
   }
 }
@@ -99,6 +106,30 @@ export async function loginWithPhone(params: PhoneLoginParams): Promise<UserAcco
   }
 
   const store = useUserStore.getState()
+
+  // 优先使用 Supabase Auth
+  if (supabaseAdapter.isConfigured && store.isOnline) {
+    const result = await supabaseAdapter.verifyOtp(params.phone, params.code)
+    if (result.success) {
+      const profile = await supabaseAdapter.getUserProfile()
+      if (profile) {
+        const user: UserAccount = {
+          userId: profile.userId ?? await supabaseAdapter.getCurrentUserId() ?? generateId(),
+          phone: profile.phone ?? params.phone,
+          email: profile.email,
+          plan: profile.plan ?? 'free',
+          credits: profile.credits ?? 100,
+          totalCreditsEarned: profile.totalCreditsEarned ?? 100,
+          totalCreditsSpent: profile.totalCreditsSpent ?? 0,
+          checkInStreak: profile.checkInStreak ?? 0,
+          createdAt: profile.createdAt ?? new Date().toISOString(),
+        }
+        store.login(user)
+        return user
+      }
+    }
+    // Supabase 验证失败，回退
+  }
 
   if (!store.isOnline) {
     const user = createOfflineUserWithPhone(params.phone)
@@ -121,7 +152,6 @@ export async function loginWithPhone(params: PhoneLoginParams): Promise<UserAcco
     store.login(user)
     return user
   } catch {
-    // API 不可用时回退到 mock
     const user = createOfflineUserWithPhone(params.phone)
     store.login(user)
     return user
@@ -147,6 +177,9 @@ export async function fetchProfile(): Promise<UserAccount | null> {
 
 export function logout(): void {
   apiClient.updateConfig({ apiKey: undefined })
+  if (supabaseAdapter.isConfigured) {
+    supabaseAdapter.logout()
+  }
   useUserStore.getState().logout()
 }
 

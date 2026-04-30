@@ -111,9 +111,11 @@ class ApiClient {
   }
 }
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
+
 /** 默认 API 客户端实例 */
 export const apiClient = new ApiClient({
-  baseUrl: 'http://localhost:8000',
+  baseUrl: API_BASE_URL,
   timeout: DEFAULT_TIMEOUT,
 })
 
